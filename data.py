@@ -4,7 +4,7 @@ import pandas as pd
 import pandas_datareader as pdr
 
 
-def equity_close_price(tickers, start_date, end_date):
+def equity_close_prices(tickers, start_date, end_date):
     """
     Return dataframe of date series of close prices for the specified tickers.
     Note that this are true close prices. Not adjusted for splits and dividends.
