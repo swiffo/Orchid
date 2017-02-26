@@ -39,20 +39,6 @@ actual_close = data.equity_close_prices(ticker, start, end)
 adjusted_close = pdr.DataReader(ticker, 'yahoo', start, end)["Adj Close"]
 all_actions = pdr.DataReader(ticker, 'yahoo-actions', start, end) # splits and dividends
 
-# Create the factors to divide historical actual close price by due to dividend effects.
-# When a dividend D is paid out on day T, the actual close on day D, call it C, will be
-# D lower than it would have been without dividend (if the dividend was fully priced in).
-# Hence, price is lowered by a factor C/(C+D) on that day. Thus, we should divide closes
-# on all previous days with that factor.
-dividends = all_actions[all_actions.action == 'DIVIDEND'].value.copy()
-actual_close_on_dividend_dates = actual_close[dividends.index]
-
-dividend_factors = (actual_close_on_dividend_dates + dividends) / actual_close_on_dividend_dates
-dividend_factors.sort_index(inplace=True) # ascending order
-dividend_factors = dividend_factors[::-1].cumprod()[::-1]
-dividend_factors = dividend_factors.reindex(actual_close.index, method='bfill', fill_value=1)
-dividend_factors = dividend_factors.shift(-1).fillna(1)
-
 # Create splits multiplier to be used for past stock prices. A split on day T has already been factored
 # into the close price that day. That is, a 10 to 1 split on day D will see price about 10-double from
 # day D-1 to D.
@@ -65,6 +51,22 @@ split_factors.sort_index(inplace=True) # ascending order
 split_factors = split_factors[::-1].cumprod()[::-1]
 split_factors = split_factors.reindex(actual_close.index, method='bfill', fill_value=1)
 split_factors = split_factors.shift(-1).fillna(1)
+
+# Create the factors to divide historical actual close price by due to dividend effects.
+# When a dividend D is paid out on day T, the actual close on day D, call it C, will be
+# D lower than it would have been without dividend (if the dividend was fully priced in).
+# Hence, price is lowered by a factor C/(C+D) on that day. Thus, we should divide closes
+# on all previous days with that factor.
+dividends = all_actions[all_actions.action == 'DIVIDEND'].value.copy()
+dividends = dividends / split_factors[dividends.index]
+actual_close_on_dividend_dates = actual_close[dividends.index]
+
+dividend_factors = (actual_close_on_dividend_dates + dividends) / actual_close_on_dividend_dates
+dividend_factors.sort_index(inplace=True) # ascending order
+dividend_factors = dividend_factors[::-1].cumprod()[::-1]
+dividend_factors = dividend_factors.reindex(actual_close.index, method='bfill', fill_value=1)
+dividend_factors = dividend_factors.shift(-1).fillna(1)
+
 
 calculated_adjusted_close = actual_close * split_factors / dividend_factors
 
