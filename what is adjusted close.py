@@ -4,7 +4,7 @@ Yahoo Financials data.
 
 The hypothesis is that the adjusted close price is calculated as follows:
 Starting from today, the horizon, walk backwards in time and whenever coming across
-a corporate action do the following:
+a corporate action do the following (https://blog.quandl.com/guide-to-stock-price-calculation):
 
 DIVIDEND PAYOUT:
  Given a payout of dividend D at time T with a close price of P. Assuming the dividend
