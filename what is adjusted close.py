@@ -8,9 +8,8 @@ a corporate action do the following (https://blog.quandl.com/guide-to-stock-pric
 
 DIVIDEND PAYOUT:
  Given a payout of dividend D at time T with a close price of P. Assuming the dividend
- was fully expected that means that price P is D lower than it otherwise would have been.
- Thus it is a factor P/(P+D) lower than it otherwise would have been on day D. Multiply all
- prices before day D with the factor P/(P+D).
+ was fully expected that means that price P is (about) D higher at time T-1 than it otherwise
+ would have been. Thus it (and earlier prices) should be corrected by a factor (P-D)/P.
 
 STOCK SPLIT:
  Given a stock split of N to K at time T. A single stock at time T (and forward) is thus equivalent
@@ -19,8 +18,7 @@ STOCK SPLIT:
 
 
 CONCLUSION:
- The above matches Yahoo! Finance by and large but not by the accuracy I would have expected.
- There may be something missing still.
+ The above matches Yahoo! Finance but I find the reasoning iffy.
 """
 
 import datetime
@@ -54,21 +52,20 @@ split_factors = split_factors.reindex(actual_close.index, method='bfill', fill_v
 split_factors = split_factors.shift(-1).fillna(1)
 
 # Create the factors to divide historical actual close price by due to dividend effects.
-# When a dividend D is paid out on day T, the actual close on day D, call it C, will be
-# D lower than it would have been without dividend (if the dividend was fully priced in).
-# Hence, price is lowered by a factor C/(C+D) on that day. Thus, we should divide closes
-# on all previous days with that factor.
+# When a dividend D is paid out on day T, the actual close price on day T-1, call it P, will
+# include the dividend D and should be corrected to P-D. Thus we should multiply all
+# close prices before day T by (P-D)/P.
 dividends = all_actions[all_actions.action == 'DIVIDEND'].value.copy()
 dividends = dividends / split_factors[dividends.index] # Dividends factor future stock splits into them
-actual_close_on_dividend_dates = actual_close[dividends.index]
+actual_close_on_predividend_dates = actual_close.shift(1)[dividends.index]
 
-dividend_factors = (actual_close_on_dividend_dates + dividends) / actual_close_on_dividend_dates
+dividend_factors = (actual_close_on_predividend_dates - dividends) / actual_close_on_predividend_dates
 dividend_factors.sort_index(inplace=True) # ascending order
 dividend_factors = dividend_factors[::-1].cumprod()[::-1]
 dividend_factors = dividend_factors.reindex(actual_close.index, method='bfill', fill_value=1)
 dividend_factors = dividend_factors.shift(-1).fillna(1)
 
-calculated_adjusted_close = actual_close * split_factors / dividend_factors
+calculated_adjusted_close = actual_close * split_factors * dividend_factors
 
 # Plot Yahoo adjusted close and the replicated adjusted close
 calculated_adjusted_close.plot()
