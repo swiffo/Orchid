@@ -19,7 +19,8 @@ STOCK SPLIT:
 
 
 CONCLUSION:
- Well, the calculated adjusted close does not match the adjusted close from Yahoo, so who knows ...
+ The above matches Yahoo! Finance by and large but not by the accuracy I would have expected.
+ There may be something missing still.
 """
 
 import datetime
@@ -58,7 +59,7 @@ split_factors = split_factors.shift(-1).fillna(1)
 # Hence, price is lowered by a factor C/(C+D) on that day. Thus, we should divide closes
 # on all previous days with that factor.
 dividends = all_actions[all_actions.action == 'DIVIDEND'].value.copy()
-dividends = dividends / split_factors[dividends.index]
+dividends = dividends / split_factors[dividends.index] # Dividends factor future stock splits into them
 actual_close_on_dividend_dates = actual_close[dividends.index]
 
 dividend_factors = (actual_close_on_dividend_dates + dividends) / actual_close_on_dividend_dates
@@ -67,10 +68,9 @@ dividend_factors = dividend_factors[::-1].cumprod()[::-1]
 dividend_factors = dividend_factors.reindex(actual_close.index, method='bfill', fill_value=1)
 dividend_factors = dividend_factors.shift(-1).fillna(1)
 
-
 calculated_adjusted_close = actual_close * split_factors / dividend_factors
 
-# Plot it all
+# Plot Yahoo adjusted close and the replicated adjusted close
 calculated_adjusted_close.plot()
 adjusted_close.plot()
 plt.show()
