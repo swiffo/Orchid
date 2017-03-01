@@ -35,7 +35,8 @@ def absolute_drawdown(ser, offset=0.0):
     cum_return = offset + ser.cumsum()
     raw_drawdown = cum_return.cummax() - cum_return
     # Set negative values to 0.0 as drawdown is max(0,raw_drawdown)
-    return raw_drawdown.clip(0.0)
+    abs_drawdown = raw_drawdown.clip(0.0)
+    return abs_drawdown
 
 
 def relative_drawdown(ser, offset=0.0):
@@ -56,7 +57,8 @@ def relative_drawdown(ser, offset=0.0):
     cum_return_max = offset + ser.cumsum().cummax()
     raw_rel_drawdown = absolute_drawdown(ser,offset)/cum_return_max
     # Set negative values to 0.0 as relative drawdown is max(0,raw_rel_drawdown)
-    return raw_rel_drawdown.clip(0.0)
+    rel_drawdown = raw_rel_drawdown.clip(0.0)
+    return rel_drawdown
 
 
 def maximum_absolute_drawdown(ser, offset=0.0):
