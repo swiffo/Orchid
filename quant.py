@@ -14,7 +14,6 @@ def auto_corr(data, min_lag=1, max_lag=20):
     lags = range(min_lag, max_lag + 1)
     auto_correlations = []
     for column, series in data.iteritems():
-        auto_correlations.append(
-            pd.DataFrame([data.autocorr(lag) for lag in lags], columns=[column], index=lags))
+        auto_correlations.append(pd.DataFrame([series.autocorr(lag) for lag in lags], columns=[column], index=lags))
 
     return pd.concat(auto_correlations, axis=1)
