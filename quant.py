@@ -38,14 +38,9 @@ def rolling_autocorr(data, window, lag=1):
     :param lag: The lag for the auto-correlation.
     :return: Dataframe as specified.
     """
-    autocorr_dataframes = []
+    rolling_mean = data.rolling(window).mean()
+    rolling_var = (data ** 2).rolling(window).mean() - rolling_mean ** 2
+    rolling_cov = ((data * data.shift(lag)).rolling(window).mean() - rolling_mean * rolling_mean.shift(lag))
+    rolling_corr = rolling_cov / np.sqrt(rolling_var * rolling_var.shift(lag))
 
-    for column, series in data.iteritems():
-        rolling_mean = series.rolling(window).mean()
-        rolling_var = (series ** 2).rolling(window).mean() - rolling_mean ** 2
-        rolling_cov = ((series * series.shift(lag)).rolling(window).mean() - rolling_mean * rolling_mean.shift(lag))
-        rolling_corr = rolling_cov / np.sqrt(rolling_var * rolling_var.shift(lag))
-
-        autocorr_dataframes.append(pd.DataFrame(rolling_corr, columns=[column]))
-
-    return pd.concat(autocorr_dataframes, axis=1)
+    return rolling_corr
