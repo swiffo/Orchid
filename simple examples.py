@@ -25,7 +25,7 @@ plt.show()
 # Show some drawdown plots for a strategy yielding random returns
 JPM_closes = close_prices['JPM']    # Yields a Series object with JPM closes
 orig_close = JPM_closes[0]                 
-factor = orig_close/50.0            # Max absolute value of daily returns 
+factor = orig_close*0.02            # Max absolute value of daily returns 
                                     # constrained to 2% original JPM quote
 np.random.seed(42)
 return_series = pd.Series(factor*(np.random.rand(len(JPM_closes))-0.5),
