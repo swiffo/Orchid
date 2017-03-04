@@ -51,7 +51,7 @@ def fx_spot_rates(crosses, start_date, end_date):
 
         dataframes.append(spot_rates)
 
-    all_rates = pd.concat(dataframes)
+    all_rates = pd.concat(dataframes, axis=1)
     all_rates = all_rates[crosses] # reorder columns to match originally specified list of crosses
 
     return all_rates
