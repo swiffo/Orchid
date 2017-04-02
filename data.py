@@ -41,17 +41,17 @@ def fx_spot_rates(currency_pairs, start, end):
 
     # Currency -> FRED symbol, whether USD is base currency or not
     ccy_to_FRED_info = {
-        'GBP': ('DEXUSUK', False),
-        'MXN': ('DEXMXUS', True),
-        'CAD': ('DEXCAUS', True),
-        'EUR': ('DEXUSEU', False),
-        'CHF': ('DEXSZUS', True),
-        'JPY': ('DEXJPUS', True),
-        'ZAR': ('DEXSFUS', True),
-        'KRW': ('DEXKOUS', True),
         'BRL': ('DEXBZUS', True),
+        'CAD': ('DEXCAUS', True),
+        'CHF': ('DEXSZUS', True),
+        'EUR': ('DEXUSEU', False),
+        'GBP': ('DEXUSUK', False),
         'INR': ('DEXINUS', True),
-        'MYR': ('DEXMAUS', True)
+        'JPY': ('DEXJPUS', True),
+        'KRW': ('DEXKOUS', True),
+        'MXN': ('DEXMXUS', True),
+        'MYR': ('DEXMAUS', True),
+        'ZAR': ('DEXSFUS', True),
     }
 
     # Get the names for data series in FRED and whether they need to be inverted (reciprocal
