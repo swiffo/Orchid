@@ -44,6 +44,7 @@ def fx_spot_rates(currency_pairs, start, end):
         'BRL': ('DEXBZUS', True),
         'CAD': ('DEXCAUS', True),
         'CHF': ('DEXSZUS', True),
+        'DKK': ('DEXDNUS', True),
         'EUR': ('DEXUSEU', False),
         'GBP': ('DEXUSUK', False),
         'INR': ('DEXINUS', True),
