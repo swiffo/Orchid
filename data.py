@@ -1,7 +1,8 @@
-import collections
+import datetime
 
 import pandas as pd
 import pandas_datareader as pdr
+import pytz
 
 
 def equity_close_prices(tickers, start_date, end_date):
@@ -19,43 +20,69 @@ def equity_close_prices(tickers, start_date, end_date):
 
     return prices
 
-def fx_spot_rates(crosses, start_date, end_date):
+
+def fx_spot_rates(currency_pairs, start, end):
     """
-    Return dataframe of date series of crosses. Index is date. Columns are given by specified
-    crosses.
+    Return dataframe of time series of NY noon exchange rates for the specified currency pairs.
 
-    :param crosses: List or single string of form CCY1/CCY2, e.g., "USD/JPY"
-    :param start_date: First date to include in data
-    :param end_date: Last date to include in data
-    :return: pandas dataframe indexed by date, columns indexed by crosses
+    :param currency_pairs: list of currency pairs. Each pair of the form <base currency>/<quote currency>. E.g., "USD/JPY".
+    :param start: start date (inclusive)
+    :param end: end date (inclusive)
+    :return: Dataframe indexed by time and with columns defined by the specified currency pairs.
     """
+    # Construct the list of currencies to pull in FRED FX data for (against USD)
+    all_currencies = set()
+    for pair in currency_pairs:
+        for ccy in currencies_from_cross(pair):
+            all_currencies.add(ccy.upper())
 
-    # We have to make one data call per denominated currency (CCY2), so start by constructing
-    # a dictionary of denominated -> list of base ccys.
-    denominated_to_base_dict = collections.defaultdict(list)
-    for cross in crosses:
-        [base, quote] = currencies_from_cross(cross)
-        denominated_to_base_dict[quote].append(base)
+    if 'USD' in all_currencies:
+        all_currencies.remove('USD')
 
-    # Retrieve the data
-    dataframes = []
-    for quote, bases in denominated_to_base_dict.items():
-        spot_rates = pdr.oanda.get_oanda_currency_historical_rates(start_date, end_date, quote_currency=quote,
-                                                                   base_currency=bases)
-        # We need to construct a dataframe with the correct column names (crosses). If there is only a single base currency,
-        # the above call returns a time series (and we have to construct a dataframe). If there are multiple base
-        # currencies, it returns a dataframe and all we need to do is rename the columns.
-        if len(bases) == 1:
-            spot_rates = pd.DataFrame(spot_rates, columns=['{}/{}'.format(base, quote) for base in bases])
+    # Currency -> FRED symbol, whether USD is base currency or not
+    ccy_to_FRED_info = {
+        'GBP': ('DEXUSUK', False),
+        'MXN': ('DEXMXUS', True),
+        'CAD': ('DEXCAUS', True),
+        'EUR': ('DEXUSEU', False),
+        'CHF': ('DEXSZUS', True),
+        'JPY': ('DEXJPUS', True),
+        'ZAR': ('DEXSFUS', True)
+    }
+
+    # Get the names for data series in FRED and whether they need to be inverted (reciprocal
+    # value) to have USD as base currency.
+    data_series_names = [ccy_to_FRED_info.get(ccy)[0] for ccy in all_currencies]
+    data_series_invert = [ccy_to_FRED_info.get(ccy)[1] for ccy in all_currencies]
+
+    # USD/<ccy> data frame
+    data = pdr.data.DataReader(data_series_names, 'fred', start, end)
+    data.columns = all_currencies
+    for ccy, do_inversion in zip(all_currencies, data_series_invert):
+        if do_inversion:
+            data[ccy] = 1 / data[ccy]
+
+    # For each currency pair, used the exchange rates with USD as base currency to construct
+    # the exchange rate.
+    rate_dfs = []
+    for pair in currency_pairs:
+        [base_ccy, quote_ccy] = currencies_from_cross(pair)
+        if base_ccy == 'USD':
+            rate_ts = 1 / data[quote_ccy]
+        elif quote_ccy == 'USD':
+            rate_ts = data[base_ccy]
         else:
-            spot_rates.rename(columns={base: '{}/{}'.format(base, quote) for base in bases})
+            rate_ts = data[base_ccy] / data[quote_ccy]
 
-        dataframes.append(spot_rates)
+        rate_ts.name = pair
+        rate_dfs.append(rate_ts)
 
-    all_rates = pd.concat(dataframes, axis=1)
-    all_rates = all_rates[crosses] # reorder columns to match originally specified list of crosses
+    # The FRED website states that the exchange rates are the buy rates at noon in NY. Whatever that means.
+    rate_df = pd.concat(rate_dfs, axis=1)
+    NY_TZ = pytz.timezone('US/Eastern')
+    rate_df.index = [datetime.datetime(t.year, t.month, t.day, 12, 0, 0, tzinfo=NY_TZ) for t in rate_df.index]
 
-    return all_rates
+    return rate_df
 
 
 def currencies_from_cross(cross):
