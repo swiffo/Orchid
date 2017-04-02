@@ -47,7 +47,11 @@ def fx_spot_rates(currency_pairs, start, end):
         'EUR': ('DEXUSEU', False),
         'CHF': ('DEXSZUS', True),
         'JPY': ('DEXJPUS', True),
-        'ZAR': ('DEXSFUS', True)
+        'ZAR': ('DEXSFUS', True),
+        'KRW': ('DEXKOUS', True),
+        'BRL': ('DEXBZUS', True),
+        'INR': ('DEXINUS', True),
+        'MYR': ('DEXMAUS', True)
     }
 
     # Get the names for data series in FRED and whether they need to be inverted (reciprocal
